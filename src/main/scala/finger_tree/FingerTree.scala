@@ -83,6 +83,25 @@ sealed trait FingerTree[+A] {
     case Deep(pr, m, Three(b, c, d))   => Some(Deep(pr, m, Two(b, c)), d)
     case Deep(pr, m, Four(b, c, d, e)) => Some(Deep(pr, m, Three(b, c, d)), e)
   }
+
+  private def append[B >: A](es: List[B], other: FingerTree[B]): FingerTree[B] = (this, other) match {
+    case (pr, Empty) =>
+      es.foldLeft[FingerTree[B]](pr) { case (acc, e) => acc.snoc(e) }
+    case (pr, Single(f)) =>
+      es.foldLeft[FingerTree[B]](pr) { case (acc, e) => acc.snoc(e) }.snoc(f)
+    case (Deep(pr, m1, sf1), Deep(pr1, m2, sf)) =>
+      val esNode = (sf1.toList ++ es ++ pr1.toList).grouped(3).toList.map {
+        case a :: b :: c :: Nil => Node3(a, b, c)
+        case a :: b :: Nil      => Node2(a, b)
+        case _ :: Nil | Nil => throw new IllegalArgumentException
+      }
+      val m = m1.append(esNode, m2)
+      Deep(pr, m, sf)
+  }
+
+  def ++[B >: A](other: FingerTree[B]): FingerTree[B] = {
+    append(Nil, other)
+  }
 }
 
 object FingerTree {
@@ -92,7 +111,14 @@ object FingerTree {
     * root of tree
     * has 1 ~ 4 elements.
     */
-  sealed trait Digit[+A]
+  sealed trait Digit[+A] {
+    def toList: List[A] = this match {
+      case One(a)           => List(a)
+      case Two(a, b)        => List(a, b)
+      case Three(a, b, c)   => List(a, b, c)
+      case Four(a, b, c, d) => List(a, b, c, d)
+    }
+  }
   case class One[A](a: A) extends Digit[A]
   case class Two[A](a1: A, a2: A) extends Digit[A]
   case class Three[A](a1: A, a2: A, a3: A) extends Digit[A]
