@@ -89,12 +89,19 @@ sealed trait FingerTree[+A] {
       es.foldLeft[FingerTree[B]](pr) { case (acc, e) => acc.snoc(e) }
     case (pr, Single(f)) =>
       es.foldLeft[FingerTree[B]](pr) { case (acc, e) => acc.snoc(e) }.snoc(f)
+    case (Empty, sf) =>
+      es.foldRight[FingerTree[B]](sf) { case (e, acc) => acc.cons(e) }
+    case (Single(r), sf) =>
+      es.foldRight[FingerTree[B]](sf) { case (e, acc) => acc.cons(e) }.cons(r)
     case (Deep(pr, m1, sf1), Deep(pr1, m2, sf)) =>
-      val esNode = (sf1.toList ++ es ++ pr1.toList).grouped(3).toList.map {
-        case a :: b :: c :: Nil => Node3(a, b, c)
-        case a :: b :: Nil      => Node2(a, b)
-        case _ :: Nil | Nil => throw new IllegalArgumentException
+      def makeNode(xs: List[B]): List[Node[B]] = xs match {
+        case a :: b :: Nil      => Node2(a, b) :: Nil
+        case a :: b :: c :: Nil => Node3(a, b, c) :: Nil
+        case a :: b :: res      => Node2(a, b) :: makeNode(res)
+        case _ :: Nil | Nil     => throw new IllegalArgumentException
       }
+
+      val esNode = makeNode(sf1.toList ++ es ++ pr1.toList)
       val m = m1.append(esNode, m2)
       Deep(pr, m, sf)
   }

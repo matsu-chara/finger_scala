@@ -66,4 +66,27 @@ class FingerTreeTest extends FunSuite with DiagrammedAssertions {
     }
   }
 
+  test("++") {
+    def fromCons(range: Range): FingerTree[Int] = range.foldLeft[FingerTree[Int]](empty) {
+      case (acc, i) => acc.cons(i)
+    }
+    def fromSnoc(range: Range): FingerTree[Int] = range.foldLeft[FingerTree[Int]](empty) {
+      case (acc, i) => acc.snoc(i)
+    }
+
+    val ft1 = fromSnoc(1 to 5)
+    val ft2 = fromCons(6 to 10)
+    // format: off
+    val expect1 = Deep(One(1),Deep(One(Node2(2,3)),Empty,Three(Node2(4,5),Node2(10,9),Node2(8,7))),One(6))
+    // format: on
+    assert(ft1 ++ ft2 === expect1)
+
+    val ft10 = fromSnoc(11 to 20)
+    val ft20 = fromCons(21 to 30)
+    // format: off
+    val expect2 = Deep(One(11),Deep(One(Node3(12,13,14)),Deep(One(Node2(Node3(15,16,17),Node2(18,19))),Empty,One(Node3(Node2(20,30),Node2(29,28),Node3(27,26,25)))),One(Node3(24,23,22))),One(21))
+    // format: on
+    assert(ft10 ++ ft20 == expect2)
+  }
+
 }
